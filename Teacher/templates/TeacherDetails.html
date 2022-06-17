@@ -1,0 +1,237 @@
+
+{% load crispy_forms_tags %}
+<html>
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+
+
+<body>
+
+
+{% block content %}
+<div class="container">
+    <h1>Teacher Directory</h1>
+    <br/><br/>
+    
+    <form enctype="multipart/form-data">
+        {% csrf_token %} 
+        <div class="row">
+            <div class="col" id="search_teacher">
+                <input type="search"  class="form-control rounded" placeholder="Search" aria-label="Search" aria-describedby="search-addon" />
+            
+            </div>
+        
+            <br/>
+            <div class="col">
+                <button type="button" id="add_tchr" class="btn btn-primary" data-toggle="modal" data-target="#TeacherAddModal">Add Teacher</button>
+            <div>
+            <div class="row" style="margin-top: 15px;">
+                <p id="search_result_msg" style="color:red;"> </p>
+            </div>
+           
+        </div>
+        <div class="row" >
+            
+            <div class="col" id="display"></div>
+        </div>
+      
+     
+ 
+    </form>
+</div>
+
+
+
+
+
+
+
+<!-----------------------------------MODAL--------------------------------->
+
+<form id="TeacherAddForm" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{form|crispy }}
+    <div class="modal fade" id="TeacherAddModal" role="dialog">
+        <div class="modal-dialog modal- md" style="margin-top: 9%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>Teacher Add</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title"></h4>
+                </div>
+
+                <div class="modal-body">
+                    
+                    {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert" id="alert">
+                            {{message}}
+                           
+                        </div>
+                     {% endfor %}
+                    {% endif %}
+
+                        <h4></h4>
+                    
+
+                            <div>
+                                {{teacher_add_form.as_p}}
+                            </div>
+                            <div>
+                                <input type="submit" value="submit" class="btn-btn-success">
+                            </div>
+                        
+                                    
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-----------------------------------MODAL_END--------------------------------->
+
+
+
+<!-----------------------------------TEACHER_DETAILS_DISPLAY--------------------------------->
+
+
+<br/>
+<form action="" method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+
+    
+{% if show %}
+    <div class="row" style="margin-top:20px;">
+       
+             {% for li in show %}
+  
+                <div class="card" style="width: 18rem;margin-top: 20px; margin-left: 30px;">
+                     <img src="{{li.Profile_Picture}}" class="card-img-top" alt="">
+                <div class="card-body">
+                    <h5 class="card-title">{{li.First_Name}} {{li.Last_Name}}</h5>
+                   
+                    <a href= "{% url 'update' li.pk %}" class="btn btn-primary">View</a> 
+                   
+
+                </div>
+        </div>
+   
+        {% endfor %}
+   
+
+{% else %}
+<h1>No Data</h1>
+
+{% endif %} 
+
+</form>
+
+
+<!-----------------------------------TEACHER_DETAILS_DISPLAY_END--------------------------------->
+{% endblock %}
+</body>
+</html>
+
+
+
+
+{% block javascript %}
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js">  
+</script>
+<script>
+    
+		
+            
+	
+    $(document).ready(function () {
+
+        $('#search_teacher > input').on('input',function(e){
+            console.log(e);
+            teacher_text = e.target.value;
+            console.log("Teacher_text : ", teacher_text);
+            $.ajax({
+                type: 'GET',
+                url: "{% url 'teacher_search' %}",
+                data:{
+                    'teacher_text': teacher_text,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                },
+
+                success: function (response) {  
+                    if (response.data){
+                        console.log("response", response.data);
+                        var sizeOfArrray = response.data.length;
+                        console.log("SIZE OF ARRAY : ",sizeOfArrray)
+                        document.getElementById("search_result_msg").innerHTML = sizeOfArrray + " Search Results Found!";
+                        console.log("response", response.data[0].First_Name);
+
+                        $("#display").empty();
+                        for(var key in response.data)
+                        {
+                            console.log(response.data[key].id + " " + response.data[key].First_Name + " " + response.data[key].Last_Name);
+                            var id = response.data[key].id;
+                            var temp = "<table><tr><td>" + " " + response.data[key].First_Name + " " + response.data[key].Last_Name + "</td></tr></table>"
+                            $("#display").append(temp);
+                        }
+                    }
+                    else if (response.notfound){
+                        console.log("response",response.notfound)
+                        document.getElementById("search_result_msg").innerHTML = "Not Found!";
+                        $("#display").empty();
+                    }
+                    else{
+                        document.getElementById("search_result_msg").innerHTML = " ";
+                        $("#display").empty();
+                    }
+                   
+                },
+                error: function (response) {
+                    console.log("error");
+                    document.getElementById("search_result_msg").innerHTML = " ";
+                   
+                }
+            })
+            
+        });
+
+        $("#TeacherAddForm").submit(function (e) {
+          e.preventDefault();
+          var serializedData = $(this).serialize();
+          console.log("entered here 1 :", serializedData);
+      
+          $.ajax({
+              type: 'POST',
+              url: "{% url 'teacher_add_sv' %}",
+              data: serializedData,
+      
+              success: function (response) {
+                  console.log("response", response);
+                  if (response.notfound)
+                  {
+                      alert("You Can not select more than 5 Subjects...")
+                  }
+                  $("#TeacherAddForm").trigger('reset');
+                  window.location.reload()
+                  $("#TeacherAddModal").modal('hide');
+                  
+                 
+              },
+              error: function (response) {
+                console.log("error");
+              }
+          })
+        })
+      });
+
+
+</script>
+{% endblock javascript %}
